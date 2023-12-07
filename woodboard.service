@@ -1,0 +1,14 @@
+[Unit]
+Description=Woodboard
+After=multi-user.target
+
+[Service]
+WorkingDirectory=/home/pi/woodboard
+ExecStart=/usr/bin/python /home/pi/woodboard/woodboard.py
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=5s
+Type=notify
+
+[Install]
+WantedBy=default.target
