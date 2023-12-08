@@ -64,7 +64,13 @@ A few deviations from this article:
 I chose to use the 64-bit Raspberry Pi OS (the Pi4 supports this), and newer versions of Raspberry Pi OS default to Wayland. This article was written around X11. You have two options, adapt the article to Wayland, or switch back to X11. If you choose to switch back to X11, this is easily done by running `sudo raspi-config`, under "Advanced", switch it. 
 
 ### Drivers
-You can find directions for setting up the Waveshare LCD [Here](https://www.waveshare.com/wiki/10.1inch_DSI_LCD_(C)#Method_1:_Install_Manually)
+~~You can find directions for setting up the Waveshare LCD [Here](https://www.waveshare.com/wiki/10.1inch_DSI_LCD_(C)#Method_1:_Install_Manually)~~ (Skip all this, drivers are built in now)
+
+add the following to `/boot/config.txt`
+
+`dtoverlay=vc4-kms-dsi-waveshare-panel,10_1_inchC,i2c10,sizex=800,sizey=1280`
+
+`dtoverlay=vc4-kms-v3d`
 
 I don't recommend going with the prebuilt image. 
 

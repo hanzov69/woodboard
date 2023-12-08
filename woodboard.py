@@ -4,11 +4,11 @@ from time import sleep
 from gpiozero import Device, MotionSensor
 from gpiozero.pins.mock import MockFactory, MockPin
 
-change_time = .1 # time, in seconds, to change between levels, .1 is default and best effect IMO
-brightness_level = 0 # starting level, 0 is brightest, 255 is off
-dim_time = 300 # time, in seconds, to dim without presence, default 300 (5 minutes)
-off_time = 1200 # time, in seconds, to turn off display, default 1200 (20 minutes)
-pir_pin = 11 # gpio pin used by PIR sensor
+change_time = .05 # time, in seconds, to change between levels, .1 is default and best effect IMO
+brightness_level = 0 # starting level, 255 is brightest, 0 is off
+dim_time = 180 # time, in seconds, to dim without presence, default 180 (3 minutes)
+off_time = 600 # time, in seconds, to turn off display, default 600 (10 minutes)
+pir_pin = 17 # gpio pin used by PIR sensor, this is the Pi GPIO, not physical
 
 ## You should be able to leave everything below untouched
 
@@ -24,7 +24,7 @@ if pir_debug == 'true':
     pin: MockPin = Device.pin_factory.pin(pir_pin)
     file_driver = "./test_brightness"
 else:
-    file_driver = "/sys/waveshare/rpi_backlight/brightness"
+    file_driver = "/sys/class/backlight/10-0045/brightness"
     logging.basicConfig(level=logging.WARN)
 
 if os.geteuid() != 0:
@@ -46,17 +46,18 @@ def sleeper(sleep_time):
         logging.debug('Sleeping for %ss' % sleep_time)
         sleep(sleep_time)
 
-def lcd_bright():
+def lcd_off():
     """
-    brings the LCD up to full brightness
+    turns the backlight off completely
     """
     global brightness_level
-    logging.debug('calling lcd_bright')
-    while brightness_level >= 0:
+    logging.debug('calling lcd_off')
+    logging.debug('brightness level: %s' % brightness_level)
+    while brightness_level > 0:
         with open(file_driver, "w") as bright_file:
             bright_file.write(str(brightness_level))
         sleeper(change_time)
-        brightness_level -= 10
+        brightness_level -= 5
 
 def lcd_dim():
     """
@@ -64,23 +65,25 @@ def lcd_dim():
     """
     global brightness_level
     logging.debug('calling lcd_dim')
-    while brightness_level <= 100:
+    logging.debug('brightness level: %s' % brightness_level)
+    while brightness_level > 100:
         with open(file_driver, "w") as bright_file:
             bright_file.write(str(brightness_level))
         sleeper(change_time)
-        brightness_level += 10
+        brightness_level -= 5
 
-def lcd_off():
+def lcd_bright():
     """
-    turns the backlight off completely
+    brings the LCD up to full brightness
     """
     global brightness_level
     logging.debug('calling lcd_off')
-    while brightness_level <= 255:
+    logging.debug('brightness level: %s' % brightness_level)
+    while brightness_level < 255:
         with open(file_driver, "w") as bright_file:
             bright_file.write(str(brightness_level))
         sleeper(change_time)
-        brightness_level += 10
+        brightness_level += 5
 
 def time_diff(last_time, current_time):
     """
@@ -97,8 +100,10 @@ def pir_activated(channel):
     currently just calls func to bring lcd to full bright
     could be useful for other detection features
     """
+    global last_time
     logging.debug('Test Activated: motion detected: %s', pir.motion_detected)
     logging.debug('Test Activated: channel: %s', channel)
+    last_time = datetime.now()
     lcd_bright()
 
 def pir_deactivated(channel):
@@ -112,6 +117,7 @@ def pir_deactivated(channel):
     logging.debug('Test Deactivated: channel: %s', channel)
     last_time = datetime.now()
 
+lcd_bright()
 while True:
     pir.when_activated = pir_activated
     pir.when_deactivated = pir_deactivated
@@ -146,9 +152,7 @@ while True:
     else:
         current_time = datetime.now()
         time_diff(last_time,current_time)
-        if (diff_seconds >= dim_time) and (diff_seconds <= off_time):
+        if (dim_time <= diff_seconds <= off_time) and (brightness_level >= 100):
             lcd_dim()
-        elif (diff_seconds >= off_time):
+        elif (diff_seconds >= off_time) and (brightness_level >= 10):
             lcd_off()
-        else:
-            lcd_bright()
