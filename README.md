@@ -1,6 +1,6 @@
 # Woodboard
 
-A little project to add PIR to a DAKboard build, which enables automatic brightness adjustment for the Waveshare 10.1" DSI Toucscreen LCD
+A little project to add PIR to a DAKboard build, which enables automatic brightness adjustment for the Waveshare 10.1" DSI Toucscreen LCD. Should/may work with other ACPI displays that allow manipulation of backlight levels via `/sys/class/backlight/`
 
 ## Notes
 
